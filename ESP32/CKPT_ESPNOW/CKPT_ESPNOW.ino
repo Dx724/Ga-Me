@@ -27,7 +27,7 @@ Button2 btn2(BUTTON_2);
 
 int activeScreen = 1;
 
-void showTouch() {
+void showTouch() { // TODO: Using touch?
   static uint64_t timeStamp = 0;
   if (millis() - timeStamp > 1000) {
     timeStamp = millis();
@@ -37,9 +37,17 @@ void showTouch() {
   }
 }
 
-void button_init() {
+void wifi_init() {
+  WiFi.begin(WIFI_SSID, WIFI_PASS); // From secrets.h
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+  }
+}
+
+void button_init() { // TODO: Using button2 library?
   btn1.setClickHandler([](Button2 & b) {
     activeScreen = 1;
+    tft.fillScreen(TFT_BLACK);
   });
   btn1.setLongClickHandler([](Button2 & b) {
     activeScreen = 3;
@@ -73,15 +81,30 @@ void setup() {
   pinMode(TFT_BL, OUTPUT);
   digitalWrite(TFT_BL, HIGH);
 
-  tft.setSwapBytes(true);
-  tft.fillScreen(TFT_BLUE);
+  pinMode(BUTTON_1, INPUT);
+  pinMode(BUTTON_2, INPUT);
 
-  button_init();
+  tft.setSwapBytes(true);
+  tft.fillScreen(TFT_RED);
+
+  wifi_init();
+  tft.fillScreen(TFT_GREEN);
+
+  //button_init();
+}
+
+void show_buttons() {
+  int b1 = digitalRead(BUTTON_1);
+  int b2 = digitalRead(BUTTON_2);
+  tft.fillScreen(TFT_BLACK);
+  tft.setTextDatum(MC_DATUM);
+  tft.drawString("Buttons:" + String(b1) + " " + String(b2),  tft.width() / 2, tft.height() / 2 );
 }
 
 void loop() {
-  if (activeScreen == 2) {
-    showTouch();
-  }
-  button_loop();
+//  if (activeScreen == 2) {
+//    showTouch();
+//  }
+  //button_loop();
+  show_buttons();
 }
