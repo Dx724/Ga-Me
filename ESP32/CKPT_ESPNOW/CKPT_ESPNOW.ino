@@ -94,11 +94,15 @@ void setup() {
 }
 
 void show_buttons() {
-  int b1 = digitalRead(BUTTON_1);
-  int b2 = digitalRead(BUTTON_2);
-  tft.fillScreen(TFT_BLACK);
-  tft.setTextDatum(MC_DATUM);
-  tft.drawString("Buttons:" + String(b1) + " " + String(b2),  tft.width() / 2, tft.height() / 2 );
+  static uint64_t timeStamp = 0;
+  if (millis() - timeStamp > 1000) {
+    timeStamp = millis();
+    int b1 = !digitalRead(BUTTON_1); // Buttons are normally-closed push buttons, so invert
+    int b2 = !digitalRead(BUTTON_2);
+    tft.fillScreen(TFT_BLACK);
+    tft.setTextDatum(MC_DATUM);
+    tft.drawString("Buttons:" + String(b1) + " " + String(b2),  tft.width() / 2, tft.height() / 2 );
+  }
 }
 
 void loop() {
