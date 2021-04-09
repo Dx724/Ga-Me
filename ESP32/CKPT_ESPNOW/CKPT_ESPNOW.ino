@@ -29,15 +29,15 @@
 #if BOARD_ROLE == 1
 const uint8_t OWN_MAC[] = MAC1;
 const uint8_t OTHER_MAC_A[] = MAC2;
-//const uint8_t OTHER_MAC_B[] = MAC3;
+const uint8_t OTHER_MAC_B[] = MAC3;
 #elif BOARD_ROLE == 2
 const uint8_t OWN_MAC[] = MAC2;
 const uint8_t OTHER_MAC_A[] = MAC1;
-//const uint8_t OTHER_MAC_B[] = MAC3;
+const uint8_t OTHER_MAC_B[] = MAC3;
 #elif BOARD_ROLE == 3
 const uint8_t OWN_MAC[] = MAC3;
 const uint8_t OTHER_MAC_A[] = MAC1;
-//const uint8_t OTHER_MAC_B[] = MAC2;
+const uint8_t OTHER_MAC_B[] = MAC2;
 #endif
 
 typedef struct struct_msg {
@@ -45,7 +45,7 @@ typedef struct struct_msg {
   int btn2;
 } struct_msg;
 
-struct_msg msg_out, msg_in;
+struct_msg msg_out, msg_in_a, msg_in_b;
 
 TFT_eSPI tft = TFT_eSPI(135, 240);
 Button2 btn1(BUTTON_1);
@@ -59,11 +59,20 @@ void data_send_callback(const uint8_t *mac, esp_now_send_status_t status) {
   }
 }
 
+bool mac_equals(const uint8_t *mac1, const uint8_t *mac2) {
+  for (int i = 0; i < 6; i++) {
+    if (mac1[i] != mac2[i])
+      return false;
+  }
+  return true;
+}
+
 void data_recv_callback(const uint8_t *mac, const uint8_t *data_in, int len) {
-  memcpy(&msg_in, data_in, sizeof(msg_in));
+  struct_msg *msg_dest = mac_equals(OTHER_MAC_A, mac) ? &msg_in_a : &msg_in_b;
+  memcpy(msg_dest, data_in, sizeof(*msg_dest));
   Serial.println("Received message!");
-  Serial.println("B1: " + String(msg_in.btn1));
-  Serial.println("B2: " + String(msg_in.btn2));
+  Serial.println("B1: " + String(msg_dest->btn1));
+  Serial.println("B2: " + String(msg_dest->btn2));
 }
 
 void showTouch() { // TODO: Using touch?
@@ -150,7 +159,7 @@ void setup() {
   tft.setSwapBytes(true);
   tft.fillScreen(TFT_RED);
 
-  if (enow_init() && add_peer(OTHER_MAC_A))// && add_peer(OTHER_MAC_B))
+  if (enow_init() && add_peer(OTHER_MAC_A) && add_peer(OTHER_MAC_B))
     tft.fillScreen(TFT_GREEN);
 
   //button_init();
@@ -164,7 +173,7 @@ void do_send(const uint8_t *mac) {
 
 void do_broadcast() {
   do_send(OTHER_MAC_A);
-  //do_send(OTHER_MAC_B);
+  do_send(OTHER_MAC_B);
 }
 
 void show_buttons() {
@@ -176,7 +185,8 @@ void show_buttons() {
     tft.fillScreen(TFT_BLACK);
     tft.setTextDatum(MC_DATUM);
     tft.drawString("Buttons:" + String(b1) + " " + String(b2),  tft.width() / 2, tft.height() / 2 );
-    tft.drawString("Btn_A:" + String(msg_in.btn1) + " " + String(msg_in.btn2),  tft.width() / 2, tft.height() / 4 );
+    tft.drawString("Btn_A:" + String(msg_in_a.btn1) + " " + String(msg_in_a.btn2),  tft.width() / 2, tft.height() / 4 );
+    tft.drawString("Btn_B:" + String(msg_in_b.btn1) + " " + String(msg_in_b.btn2),  tft.width() / 2, 3 * tft.height() / 4 );
 
     msg_out.btn1 = b1;
     msg_out.btn2 = b2;
