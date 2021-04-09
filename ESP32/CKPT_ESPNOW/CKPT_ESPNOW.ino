@@ -2,6 +2,8 @@
 #include <WiFi.h>
 #include <Button2.h>
 #include "secrets.h"
+#include "common.h"
+#include <esp_now.h>
 
 #ifndef TFT_DISPOFF
 #define TFT_DISPOFF 0x28
@@ -18,14 +20,51 @@
 #define TFT_RST             23
 
 #define TFT_BL              4
-#define BUTTON_1            35
-#define BUTTON_2            0
+#define BUTTON_1            0
+#define BUTTON_2            35
+
+// TODO: Define roles
+#define BOARD_ROLE 1
+
+#if BOARD_ROLE == 1
+const uint8_t OWN_MAC[] = MAC1;
+const uint8_t OTHER_MAC_A[] = MAC2;
+//const uint8_t OTHER_MAC_B[] = MAC3;
+#elif BOARD_ROLE == 2
+const uint8_t OWN_MAC[] = MAC2;
+const uint8_t OTHER_MAC_A[] = MAC1;
+//const uint8_t OTHER_MAC_B[] = MAC3;
+#elif BOARD_ROLE == 3
+const uint8_t OWN_MAC[] = MAC3;
+const uint8_t OTHER_MAC_A[] = MAC1;
+//const uint8_t OTHER_MAC_B[] = MAC2;
+#endif
+
+typedef struct struct_msg {
+  int btn1;
+  int btn2;
+} struct_msg;
+
+struct_msg msg_out, msg_in;
 
 TFT_eSPI tft = TFT_eSPI(135, 240);
 Button2 btn1(BUTTON_1);
 Button2 btn2(BUTTON_2);
 
 int activeScreen = 1;
+
+void data_send_callback(const uint8_t *mac, esp_now_send_status_t status) {
+  if (status != ESP_NOW_SEND_SUCCESS) {
+    Serial.println("ESP NOW SEND FAILED!\n");
+  }
+}
+
+void data_recv_callback(const uint8_t *mac, const uint8_t *data_in, int len) {
+  memcpy(&msg_in, data_in, sizeof(msg_in));
+  Serial.println("Received message!");
+  Serial.println("B1: " + String(msg_in.btn1));
+  Serial.println("B2: " + String(msg_in.btn2));
+}
 
 void showTouch() { // TODO: Using touch?
   static uint64_t timeStamp = 0;
@@ -37,7 +76,7 @@ void showTouch() { // TODO: Using touch?
   }
 }
 
-void wifi_init() {
+void wifi_init() { // TODO: Need to connect to network? May interfere with ESP NOW performance
   WiFi.begin(WIFI_SSID, WIFI_PASS); // From secrets.h
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
@@ -66,6 +105,30 @@ void button_loop() {
   btn2.loop();
 }
 
+bool enow_init() {
+  WiFi.mode(WIFI_STA);
+  if (esp_now_init() != ESP_OK) {
+    Serial.println("ESP-NOW Initialization Failed");
+    return false;
+  }
+  esp_now_register_send_cb(data_send_callback);
+  esp_now_register_recv_cb(data_recv_callback);
+  return true;
+}
+
+bool add_peer(const uint8_t *mac) {
+  esp_now_peer_info_t peerInfo = {};
+  memcpy(peerInfo.peer_addr, mac, 6);
+  peerInfo.channel = 0;
+  peerInfo.encrypt = false;
+
+  if (esp_now_add_peer(&peerInfo) != ESP_OK) {
+    Serial.println("ESP-NOW Peer Add Failed");
+    return false;
+  }
+  return true;
+}
+
 void setup() {
   Serial.begin(115200);
   Serial.println("Started.");
@@ -79,7 +142,7 @@ void setup() {
   tft.setTextDatum(MC_DATUM);
 
   pinMode(TFT_BL, OUTPUT);
-  digitalWrite(TFT_BL, HIGH);
+  digitalWrite(TFT_BL, TFT_BACKLIGHT_ON); // Set in the TFT_eSPI library configuration
 
   pinMode(BUTTON_1, INPUT);
   pinMode(BUTTON_2, INPUT);
@@ -87,10 +150,21 @@ void setup() {
   tft.setSwapBytes(true);
   tft.fillScreen(TFT_RED);
 
-  wifi_init();
-  tft.fillScreen(TFT_GREEN);
+  if (enow_init() && add_peer(OTHER_MAC_A))// && add_peer(OTHER_MAC_B))
+    tft.fillScreen(TFT_GREEN);
 
   //button_init();
+}
+
+void do_send(const uint8_t *mac) {
+  esp_err_t result = esp_now_send(mac, (uint8_t *) &msg_out, sizeof(msg_out));
+  if (result != ESP_OK)
+    Serial.println("Data send error.");
+}
+
+void do_broadcast() {
+  do_send(OTHER_MAC_A);
+  //do_send(OTHER_MAC_B);
 }
 
 void show_buttons() {
@@ -102,6 +176,12 @@ void show_buttons() {
     tft.fillScreen(TFT_BLACK);
     tft.setTextDatum(MC_DATUM);
     tft.drawString("Buttons:" + String(b1) + " " + String(b2),  tft.width() / 2, tft.height() / 2 );
+    tft.drawString("Btn_A:" + String(msg_in.btn1) + " " + String(msg_in.btn2),  tft.width() / 2, tft.height() / 4 );
+
+    msg_out.btn1 = b1;
+    msg_out.btn2 = b2;
+    do_broadcast();
+    delay(1000);
   }
 }
 
