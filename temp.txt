@@ -1,0 +1,2 @@
+lag in ESP-NOW communication (up to 2 seconds sometimes?)
+	--> thus have to transfer control of ball to next ESP rather than having central state
