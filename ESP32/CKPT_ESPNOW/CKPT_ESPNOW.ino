@@ -400,7 +400,7 @@ void game_loop() {
   else if (l_diff < 0) {
     tft.fillRect(pd_pos, the_ball->p_left.y + PADDLE_HEIGHT, pd_width, -l_diff + CLEAR_EXTRA, TFT_BLACK);
   }
-  tft.fillRect(pd_pos, the_ball->p_left.y, pd_width, PADDLE_HEIGHT, pd_width == PADDLE_THIN ? TFT_DARKGREY : TFT_WHITE);
+  tft.fillRect(pd_pos, the_ball->p_left.y, pd_width, PADDLE_HEIGHT, pd_width == PADDLE_THIN ? TFT_LIGHTGREY : TFT_WHITE);
 
   pd_width = BOARD_ROLE == 3 ? PADDLE_WIDTH : PADDLE_THIN;
   pd_pos = SCREEN_WIDTH - pd_width;
@@ -412,7 +412,7 @@ void game_loop() {
   else if (r_diff < 0) {
     tft.fillRect(pd_pos, the_ball->p_right.y + PADDLE_HEIGHT, pd_width, -r_diff + CLEAR_EXTRA, TFT_BLACK);
   }
-  tft.fillRect(pd_pos, the_ball->p_right.y, pd_width, PADDLE_HEIGHT, pd_width == PADDLE_THIN ? TFT_DARKGREY : TFT_WHITE);
+  tft.fillRect(pd_pos, the_ball->p_right.y, pd_width, PADDLE_HEIGHT, pd_width == PADDLE_THIN ? TFT_LIGHTGREY : TFT_WHITE);
 
   the_ball->p_left.last_y = the_ball->p_left.y;
   the_ball->p_right.last_y = the_ball->p_right.y;
