@@ -1,2 +1,4 @@
-lag in ESP-NOW communication (up to 2 seconds sometimes?)
+lag in ESP-NOW communication (as we have to slow things down due to heat)
 	--> thus have to transfer control of ball to next ESP rather than having central state
+
+get very hot --> slow down caculations

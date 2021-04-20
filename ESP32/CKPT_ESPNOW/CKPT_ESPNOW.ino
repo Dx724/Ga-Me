@@ -58,11 +58,22 @@ enum msg_type {
 
 c_state this_state = idle;
 
-struct ball {
+#define PADDLE_WIDTH 12
+#define PADDLE_HEIGHT 35
+#define PADDLE_VEL 7
+
+struct paddle {
+  double y;
+  double last_y;
+}
+
+struct ball { // This represents not just the ball but the gamestate of that entire ballgame
   double x;
   double y;
   int vel_x;
   int vel_y;
+  struct paddle p_left;
+  struct paddle p_right;
 };
 
 struct ball translate_coords(struct ball *global_ball) {
@@ -79,6 +90,16 @@ typedef struct struct_msg {
 } struct_msg;
 
 struct_msg msg_out, msg_in_a, msg_in_b;
+
+// Ordered messages
+const struct_msg *ord_msg[3];
+#if BOARD_ROLE == 1
+ord_msg = [&msg_out, &msg_in_b, &msg_in_a]
+#elif BOARD_ROLE == 2
+ord_msg = [&msg_in_a, &msg_out, &msg_in_b]
+#elif BOARD_ROLE == 3
+ord_msg = [&msg_in_a, &msg_in_b, &msg_out]
+#endif
 
 TFT_eSPI tft = TFT_eSPI(135, 240);
 Button2 btn1(BUTTON_1);
@@ -100,6 +121,11 @@ bool mac_equals(const uint8_t *mac1, const uint8_t *mac2) {
   return true;
 }
 
+void on_control() {
+  this_state = game;
+  tft.fillScreen(TFT_WHITE);
+}
+
 void data_recv_callback(const uint8_t *mac, const uint8_t *data_in, int len) {
   struct_msg *msg_dest = mac_equals(OTHER_MAC_A, mac) ? &msg_in_a : &msg_in_b;
   memcpy(msg_dest, data_in, sizeof(*msg_dest));
@@ -109,7 +135,7 @@ void data_recv_callback(const uint8_t *mac, const uint8_t *data_in, int len) {
   switch (msg_dest->type) {
     case ctrl:
       memcpy(&msg_out.ball, &msg_dest->ball, sizeof(msg_out.ball));
-      this_state = game;
+      on_control();
       break;
     case btn:
       break;
@@ -188,9 +214,16 @@ void game_init() {
     .x = (SCREEN_WIDTH * 3.0)/2.0,
     .y = (SCREEN_HEIGHT)/2.0,
     .vel_x = 5,
-    .vel_y = 2
+    .vel_y = 2,
+    .p_left = {
+      .y = (SCREEN_HEIGHT)/2.0,
+      .last_y = (SCREEN_HEIGHT)/2.0,
+    },
+    .p_right = {
+      .y = (SCREEN_HEIGHT)/2.0,
+      .last_y = (SCREEN_HEIGHT)/2.0,
+    }
   };
-  this_state = game;
 }
 
 void setup() {
@@ -219,6 +252,7 @@ void setup() {
 
   if (BOARD_ROLE == 2) {
     game_init();
+    on_control();
   }
   //button_init();
 }
@@ -234,6 +268,19 @@ void do_broadcast() {
   do_send(OTHER_MAC_B);
 }
 
+void update_input() {
+  int b1 = !digitalRead(BUTTON_1); // Buttons are normally-closed push buttons, so invert
+  int b2 = !digitalRead(BUTTON_2);
+  char should_send = (msg_out.btn1 ^ b1) | (msg_out.btn2 ^ b2);
+  msg_out.btn1 = b1;
+  msg_out.btn2 = b2;
+  if (should_send) {
+    msg_out.type = btn;
+    do_broadcast();
+  } 
+}
+
+/*
 void show_buttons() {
   static uint64_t timeStamp = 0;
   if (millis() - timeStamp > 1000) {
@@ -246,13 +293,16 @@ void show_buttons() {
     tft.drawString("Btn_A:" + String(msg_in_a.btn1) + " " + String(msg_in_a.btn2),  tft.width() / 2, tft.height() / 4 );
     tft.drawString("Btn_B:" + String(msg_in_b.btn1) + " " + String(msg_in_b.btn2),  tft.width() / 2, 3 * tft.height() / 4 );
 
+    char should_send = (msg_out.btn1 ^ b1) | (msg_out.btn2 ^ b2);
     msg_out.btn1 = b1;
     msg_out.btn2 = b2;
-    msg_out.type = btn;
-    do_broadcast();
-    delay(1000);
+    if (should_send) {
+      msg_out.type = btn;
+      do_broadcast();
+    }    
   }
 }
+*/
 
 #define GAME_TICK 10.0
 
@@ -273,9 +323,12 @@ void transfer_control(int direction) {
   this_state = idle;
 }
 
-#define BALL_RADIUS 3
+#define BALL_RADIUS 5
+
+#define PADDLE_RPOS (SCREEN_WIDTH - PADDLE_WIDTH)
 
 void game_loop() {
+  // Ball updates
   struct ball *the_ball = &msg_out.ball;
   the_ball->x += the_ball->vel_x / GAME_TICK;
   the_ball->y += the_ball->vel_y / GAME_TICK;
@@ -307,9 +360,33 @@ void game_loop() {
     }
   }
 
+  // Paddle updates
+  the_ball->p_left.y += PADDLE_VEL * (ord_msg[0]->btn2 - ord_msg[0]->btn1) / GAME_TICK;
+  the_ball->p_right.y += PADDLE_VEL * (ord_msg[2]->btn2 - ord_msg[2]->btn1) / GAME_TICK;
+
   // Then draw
-  tft.fillScreen(TFT_BLACK);
-  tft.fillRect(local_ball.x, local_ball.y, BALL_RADIUS, BALL_RADIUS, TFT_WHITE);
+  //tft.fillScreen(TFT_BLACK);
+  tft.fillCircle(local_ball.x, local_ball.y, BALL_RADIUS, TFT_WHITE);
+
+  // Clear only differential region to prevent screen flicker
+  // (there isn't enough RAM for a full screen buffer)
+  double l_diff = the_ball->p_left.y - the_ball->p_left.last_y;
+  if (l_diff > 0) {
+    tft.fillRect(0, the_ball->p_left.last_y, PADDLE_WIDTH, l_diff, TFT_BLACK);
+  }
+  else if (l_diff < 0) {
+    tft.fillRect(0, the_ball->p_left.y + PADDLE_HEIGHT, PADDLE_WIDTH, -l_diff, TFT_BLACK);
+  }
+  tft.fillRect(0, the_ball->p_left.y, PADDLE_WIDTH, PADDLE_HEIGHT, TFT_WHITE);
+
+  double r_diff = the_ball->p_right.y - the_ball->p_right.last_y;
+  if (r_diff > 0) {
+    tft.fillRect(PADDLE_RPOS, the_ball->p_right.last_y, PADDLE_WIDTH, r_diff, TFT_BLACK);
+  }
+  else if (r_diff < 0) {
+    tft.fillRect(PADDLE_RPOS, the_ball->p_right.y + PADDLE_HEIGHT, PADDLE_WIDTH, -r_diff, TFT_BLACK);
+  }
+  tft.fillRect(PADDLE_RPOS, the_ball->p_right.y, PADDLE_WIDTH, PADDLE_HEIGHT, TFT_WHITE);
 }
 
 void loop() {
@@ -319,11 +396,12 @@ void loop() {
   //button_loop();
   switch (this_state) {
     case idle:
-      show_buttons();
+      // TODO: idle graphics
       break;
     case game:
       game_loop();
       break;
   }
+  update_input();
   delay(GAME_TICK);
 }
