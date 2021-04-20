@@ -28,7 +28,7 @@
 #define FIELD_WIDTH (SCREEN_WIDTH * 3)
 
 // TODO: Define roles
-#define BOARD_ROLE 1
+#define BOARD_ROLE 2
 
 // OTHER_MAC_A will be directly to left if possible
 // OTHER_MAC_B will be directly to right if possible
@@ -109,6 +109,7 @@ void data_recv_callback(const uint8_t *mac, const uint8_t *data_in, int len) {
   switch (msg_dest->type) {
     case ctrl:
       memcpy(&msg_out.ball, &msg_dest->ball, sizeof(msg_out.ball));
+      this_state = game;
       break;
     case btn:
       break;
@@ -216,6 +217,9 @@ void setup() {
   if (enow_init() && add_peer(OTHER_MAC_A) && add_peer(OTHER_MAC_B))
     tft.fillScreen(TFT_GREEN);
 
+  if (BOARD_ROLE == 2) {
+    game_init();
+  }
   //button_init();
 }
 
@@ -266,6 +270,7 @@ void transfer_control(int direction) {
       Serial.println(direction);
       break;
   }
+  this_state = idle;
 }
 
 #define BALL_RADIUS 3
