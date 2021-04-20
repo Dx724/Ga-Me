@@ -328,6 +328,13 @@ void transfer_control(int direction) {
   this_state = idle;
 }
 
+void doublep_clamp(double *v, double low, double high) {
+  if (*v > high)
+    *v = high;
+  else if (*v < low)
+    *v = low;
+}
+
 #define BALL_RADIUS 5
 
 #define CLEAR_EXTRA 5
@@ -369,6 +376,9 @@ void game_loop() {
   // Paddle updates
   the_ball->p_left.y += PADDLE_VEL * (ord_msg[0]->btn2 - ord_msg[0]->btn1) / GAME_TICK;
   the_ball->p_right.y += PADDLE_VEL * (ord_msg[2]->btn2 - ord_msg[2]->btn1) / GAME_TICK;
+
+  doublep_clamp(&the_ball->p_left.y, 0, SCREEN_HEIGHT - PADDLE_HEIGHT);
+  doublep_clamp(&the_ball->p_right.y, 0, SCREEN_HEIGHT - PADDLE_HEIGHT);
 
   // Then draw
   //tft.fillScreen(TFT_BLACK);
