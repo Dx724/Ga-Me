@@ -312,7 +312,7 @@ void game_loop() {
   
   the_ball->x += the_ball->vel_x / GAME_TICK;
   the_ball->y += the_ball->vel_y / GAME_TICK;
-  the_ball->x += abs(the_ball->vel_x) / 2 * (ord_msg[1]->btn1 - ord_msg[1]->btn2) / GAME_TICK;   // Middle player ball updates
+  the_ball->x += abs(the_ball->vel_x) * 3.0 / 4 * (ord_msg[1]->btn2 - ord_msg[1]->btn1) / GAME_TICK;   // Middle player ball updates
   
   if (the_ball->y > SCREEN_HEIGHT - BALL_RADIUS) {
     the_ball->vel_y *= -1;
