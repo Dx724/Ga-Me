@@ -9,3 +9,13 @@ difficulty of testing new code across all three devices
 broken physical button
 
 only putting bugfixes on certain devices
+
+capacitance of air --> random patterns!
+
+beauty in the passive world (while at first sight it seems like Pong is the game, there's another interactive exhibit)
+
+reuse TFT for connection indication as with previous projects (since the first one!)
+
+preprocessor macros leading to recompilation
+
+symmetry in idle despite asymmetry in active state
