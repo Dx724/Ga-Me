@@ -326,8 +326,13 @@ void game_loop() {
   struct ball local_ball = translate_coords(the_ball);
   if (local_ball.x > SCREEN_WIDTH) { // Transfer control at center, not boundary of ball
     if (BOARD_ROLE < 3) {
-      transfer_control(1);
-      return;
+      if (paddle_hits(&the_ball->p_right, the_ball) && the_ball->vel_x > 0) {
+        the_ball->vel_x *= -1;
+      }
+      else {
+        transfer_control(1);
+        return;
+      }
     }
     else {
       /*
@@ -345,8 +350,13 @@ void game_loop() {
   }
   else if (local_ball.x < 0) {
     if (BOARD_ROLE > 1) {
-      transfer_control(-1);
-      return;
+      if (paddle_hits(&the_ball->p_left, the_ball) && the_ball->vel_x < 0) {
+        the_ball->vel_x *= -1;
+      }
+      else {
+        transfer_control(-1);
+        return;
+      }
     }
     else {
       /*
