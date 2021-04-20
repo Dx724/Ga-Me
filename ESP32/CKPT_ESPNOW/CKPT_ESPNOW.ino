@@ -1,6 +1,5 @@
 #include <TFT_eSPI.h>
 #include <WiFi.h>
-#include <Button2.h>
 #include "secrets.h"
 #include "common.h"
 #include <esp_now.h>
@@ -28,7 +27,7 @@
 #define FIELD_WIDTH (SCREEN_WIDTH * 3)
 
 // TODO: Define roles
-#define BOARD_ROLE 1
+#define BOARD_ROLE 2
 
 // OTHER_MAC_A will be directly to left if possible
 // OTHER_MAC_B will be directly to right if possible
@@ -102,8 +101,6 @@ const struct_msg *ord_msg[3] = {&msg_in_a, &msg_in_b, &msg_out};
 #endif
 
 TFT_eSPI tft = TFT_eSPI(135, 240);
-Button2 btn1(BUTTON_1);
-Button2 btn2(BUTTON_2);
 
 int activeScreen = 1;
 
@@ -161,28 +158,6 @@ void wifi_init() { // TODO: Need to connect to network? May interfere with ESP N
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
   }
-}
-
-void button_init() { // TODO: Using button2 library?
-  btn1.setClickHandler([](Button2 & b) {
-    activeScreen = 1;
-    tft.fillScreen(TFT_BLACK);
-  });
-  btn1.setLongClickHandler([](Button2 & b) {
-    activeScreen = 3;
-  });
-
-  btn2.setClickHandler([](Button2 & b) {
-    activeScreen = 2;
-  });
-  btn2.setLongClickHandler([](Button2 & b) {
-    activeScreen = 4;
-  });
-}
-
-void button_loop() {
-  btn1.loop();
-  btn2.loop();
 }
 
 bool enow_init() {
