@@ -23,13 +23,19 @@
 #define BUTTON_1            0
 #define BUTTON_2            35
 
+#define SCREEN_WIDTH 135
+#define SCREEN_HEIGHT 240
+#define FIELD_WIDTH (SCREEN_WIDTH * 3)
+
 // TODO: Define roles
 #define BOARD_ROLE 1
 
+// OTHER_MAC_A will be directly to left if possible
+// OTHER_MAC_B will be directly to right if possible
 #if BOARD_ROLE == 1
 const uint8_t OWN_MAC[] = MAC1;
-const uint8_t OTHER_MAC_A[] = MAC2;
-const uint8_t OTHER_MAC_B[] = MAC3;
+const uint8_t OTHER_MAC_A[] = MAC3;
+const uint8_t OTHER_MAC_B[] = MAC2;
 #elif BOARD_ROLE == 2
 const uint8_t OWN_MAC[] = MAC2;
 const uint8_t OTHER_MAC_A[] = MAC1;
@@ -40,9 +46,36 @@ const uint8_t OTHER_MAC_A[] = MAC1;
 const uint8_t OTHER_MAC_B[] = MAC2;
 #endif
 
+enum c_state {
+  idle,
+  game
+};
+
+enum msg_type {
+  ctrl,
+  btn
+};
+
+c_state this_state = idle;
+
+struct ball {
+  double x;
+  double y;
+  int vel_x;
+  int vel_y;
+};
+
+struct ball translate_coords(struct ball *global_ball) {
+  struct ball local_ball = *global_ball;
+  local_ball.x = global_ball->x - (SCREEN_WIDTH * (BOARD_ROLE - 1));
+  return local_ball;
+}
+
 typedef struct struct_msg {
   int btn1;
   int btn2;
+  struct ball ball;
+  msg_type type;
 } struct_msg;
 
 struct_msg msg_out, msg_in_a, msg_in_b;
@@ -73,6 +106,17 @@ void data_recv_callback(const uint8_t *mac, const uint8_t *data_in, int len) {
   Serial.println("Received message!");
   Serial.println("B1: " + String(msg_dest->btn1));
   Serial.println("B2: " + String(msg_dest->btn2));
+  switch (msg_dest->type) {
+    case ctrl:
+      memcpy(&msg_out.ball, &msg_dest->ball, sizeof(msg_out.ball));
+      break;
+    case btn:
+      break;
+    default:
+      Serial.print("Invalid message type ");
+      Serial.println(msg_dest->type);
+      break;
+  }
 }
 
 void showTouch() { // TODO: Using touch?
@@ -138,6 +182,16 @@ bool add_peer(const uint8_t *mac) {
   return true;
 }
 
+void game_init() {
+  msg_out.ball = {
+    .x = (SCREEN_WIDTH * 3.0)/2.0,
+    .y = (SCREEN_HEIGHT)/2.0,
+    .vel_x = 5,
+    .vel_y = 2
+  };
+  this_state = game;
+}
+
 void setup() {
   Serial.begin(115200);
   Serial.println("Started.");
@@ -190,8 +244,60 @@ void show_buttons() {
 
     msg_out.btn1 = b1;
     msg_out.btn2 = b2;
+    msg_out.type = btn;
     do_broadcast();
     delay(1000);
+  }
+}
+
+#define GAME_TICK 10.0
+
+void transfer_control(int direction) {
+  msg_out.type = ctrl;
+  switch (direction) {
+    case 1:
+      do_send(OTHER_MAC_B);
+      break;
+    case -1:
+      do_send(OTHER_MAC_A);
+      break;
+    default:
+      Serial.print("Invalid transfer direction ");
+      Serial.println(direction);
+      break;
+  }
+}
+
+void game_loop() {
+  struct ball *the_ball = &msg_out.ball;
+  the_ball->x += the_ball->vel_x / GAME_TICK;
+  the_ball->y += the_ball->vel_y / GAME_TICK;
+  if (the_ball->y > SCREEN_HEIGHT) {
+    the_ball->vel_y *= -1;
+    the_ball->y = SCREEN_HEIGHT - (the_ball->y - SCREEN_HEIGHT);
+  }
+  else if (the_ball->y < 0) {
+    the_ball->vel_y *= -1;
+    the_ball->y = -the_ball->y;
+  }
+  struct ball local_ball = translate_coords(the_ball);
+  if (local_ball.x > SCREEN_WIDTH) {
+    if (BOARD_ROLE < 3) {
+      transfer_control(1);
+    }
+    else {
+      the_ball->vel_x *= -1;
+      the_ball->x = FIELD_WIDTH - (the_ball->x - FIELD_WIDTH);
+    }
+  }
+  else if (local_ball.x < 0) {
+    if (BOARD_ROLE > 1) {
+      transfer_control(-1);
+    }
+    else {
+      the_ball->vel_x *= -1;
+      the_ball->x = -the_ball->x;
+    }
   }
 }
 
@@ -200,5 +306,13 @@ void loop() {
 //    showTouch();
 //  }
   //button_loop();
-  show_buttons();
+  switch (this_state) {
+    case idle:
+      show_buttons();
+      break;
+    case game:
+      game_loop();
+      break;
+  }
+  delay(GAME_TICK);
 }
