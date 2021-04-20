@@ -27,7 +27,7 @@
 #define FIELD_WIDTH (SCREEN_WIDTH * 3)
 
 // TODO: Define roles
-#define BOARD_ROLE 1
+#define BOARD_ROLE 3
 
 // OTHER_MAC_A will be directly to left if possible
 // OTHER_MAC_B will be directly to right if possible
@@ -361,7 +361,7 @@ void game_loop() {
       on_over();
     }
   }
-  else if (BOARD_ROLE == 3 && the_ball->y > FIELD_WIDTH - PADDLE_WIDTH - BALL_RADIUS) {
+  else if (BOARD_ROLE == 3 && local_ball.x > SCREEN_WIDTH - PADDLE_WIDTH - BALL_RADIUS) {
     if (paddle_hits(&the_ball->p_right, the_ball) && the_ball->vel_x > 0) {
       the_ball->vel_x *= -1;
       the_ball->x = (FIELD_WIDTH - PADDLE_WIDTH - BALL_RADIUS) - (the_ball->x - (FIELD_WIDTH - PADDLE_WIDTH - BALL_RADIUS));
@@ -411,7 +411,7 @@ void game_loop() {
   else if (l_diff < 0) {
     tft.fillRect(pd_pos, the_ball->p_left.y + PADDLE_HEIGHT, pd_width, -l_diff + CLEAR_EXTRA, TFT_BLACK);
   }
-  tft.fillRect(pd_pos, the_ball->p_left.y, pd_width, PADDLE_HEIGHT, pd_width == PADDLE_THIN ? TFT_GRAY : TFT_WHITE);
+  tft.fillRect(pd_pos, the_ball->p_left.y, pd_width, PADDLE_HEIGHT, pd_width == PADDLE_THIN ? TFT_LIGHTGREY : TFT_WHITE);
 
   pd_width = BOARD_ROLE == 3 ? PADDLE_WIDTH : PADDLE_THIN;
   pd_pos = SCREEN_WIDTH - pd_width;
@@ -423,7 +423,7 @@ void game_loop() {
   else if (r_diff < 0) {
     tft.fillRect(pd_pos, the_ball->p_right.y + PADDLE_HEIGHT, pd_width, -r_diff + CLEAR_EXTRA, TFT_BLACK);
   }
-  tft.fillRect(pd_pos, the_ball->p_right.y, pd_width, PADDLE_HEIGHT, pd_width == PADDLE_THIN ? TFT_GRAY : TFT_WHITE);
+  tft.fillRect(pd_pos, the_ball->p_right.y, pd_width, PADDLE_HEIGHT, pd_width == PADDLE_THIN ? TFT_LIGHTGREY : TFT_WHITE);
 
   the_ball->p_left.last_y = the_ball->p_left.y;
   the_ball->p_right.last_y = the_ball->p_right.y;
