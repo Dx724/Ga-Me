@@ -28,7 +28,7 @@
 #define FIELD_WIDTH (SCREEN_WIDTH * 3)
 
 // TODO: Define roles
-#define BOARD_ROLE 2
+#define BOARD_ROLE 3
 
 // OTHER_MAC_A will be directly to left if possible
 // OTHER_MAC_B will be directly to right if possible
@@ -65,7 +65,7 @@ c_state this_state = idle;
 struct paddle {
   double y;
   double last_y;
-}
+};
 
 struct ball { // This represents not just the ball but the gamestate of that entire ballgame
   double x;
@@ -92,13 +92,12 @@ typedef struct struct_msg {
 struct_msg msg_out, msg_in_a, msg_in_b;
 
 // Ordered messages
-const struct_msg *ord_msg[3];
 #if BOARD_ROLE == 1
-ord_msg = [&msg_out, &msg_in_b, &msg_in_a]
+const struct_msg *ord_msg[3] = {&msg_out, &msg_in_b, &msg_in_a};
 #elif BOARD_ROLE == 2
-ord_msg = [&msg_in_a, &msg_out, &msg_in_b]
+const struct_msg *ord_msg[3] = {&msg_in_a, &msg_out, &msg_in_b};
 #elif BOARD_ROLE == 3
-ord_msg = [&msg_in_a, &msg_in_b, &msg_out]
+const struct_msg *ord_msg[3] = {&msg_in_a, &msg_in_b, &msg_out};
 #endif
 
 TFT_eSPI tft = TFT_eSPI(135, 240);
@@ -123,7 +122,7 @@ bool mac_equals(const uint8_t *mac1, const uint8_t *mac2) {
 
 void on_control() {
   this_state = game;
-  tft.fillScreen(TFT_WHITE);
+  tft.fillScreen(TFT_BLACK);
 }
 
 void data_recv_callback(const uint8_t *mac, const uint8_t *data_in, int len) {
@@ -255,6 +254,12 @@ void setup() {
     on_control();
   }
   //button_init();
+
+  // TESTING CODE
+  game_init();
+  msg_out.ball.vel_x = 0;
+  msg_out.ball.x = 45;
+  on_control();
 }
 
 void do_send(const uint8_t *mac) {
@@ -325,7 +330,8 @@ void transfer_control(int direction) {
 
 #define BALL_RADIUS 5
 
-#define PADDLE_RPOS (SCREEN_WIDTH - PADDLE_WIDTH)
+#define CLEAR_EXTRA 5
+#define PADDLE_THIN 5
 
 void game_loop() {
   // Ball updates
@@ -368,25 +374,31 @@ void game_loop() {
   //tft.fillScreen(TFT_BLACK);
   tft.fillCircle(local_ball.x, local_ball.y, BALL_RADIUS, TFT_WHITE);
 
+  int pd_width = BOARD_ROLE == 1 ? PADDLE_WIDTH : PADDLE_THIN;
+  int pd_pos = 0;
+
   // Clear only differential region to prevent screen flicker
   // (there isn't enough RAM for a full screen buffer)
   double l_diff = the_ball->p_left.y - the_ball->p_left.last_y;
   if (l_diff > 0) {
-    tft.fillRect(0, the_ball->p_left.last_y, PADDLE_WIDTH, l_diff, TFT_BLACK);
+    tft.fillRect(pd_pos, the_ball->p_left.last_y, pd_width, l_diff + CLEAR_EXTRA, TFT_BLACK);
   }
   else if (l_diff < 0) {
-    tft.fillRect(0, the_ball->p_left.y + PADDLE_HEIGHT, PADDLE_WIDTH, -l_diff, TFT_BLACK);
+    tft.fillRect(pd_pos, the_ball->p_left.y + PADDLE_HEIGHT, pd_width, -l_diff + CLEAR_EXTRA, TFT_BLACK);
   }
-  tft.fillRect(0, the_ball->p_left.y, PADDLE_WIDTH, PADDLE_HEIGHT, TFT_WHITE);
+  tft.fillRect(pd_pos, the_ball->p_left.y, pd_width, PADDLE_HEIGHT, TFT_WHITE);
+
+  pd_width = BOARD_ROLE == 3 ? PADDLE_WIDTH : PADDLE_THIN;
+  pd_pos = SCREEN_WIDTH - pd_width;
 
   double r_diff = the_ball->p_right.y - the_ball->p_right.last_y;
   if (r_diff > 0) {
-    tft.fillRect(PADDLE_RPOS, the_ball->p_right.last_y, PADDLE_WIDTH, r_diff, TFT_BLACK);
+    tft.fillRect(pd_pos, the_ball->p_right.last_y, pd_width, r_diff + CLEAR_EXTRA, TFT_BLACK);
   }
   else if (r_diff < 0) {
-    tft.fillRect(PADDLE_RPOS, the_ball->p_right.y + PADDLE_HEIGHT, PADDLE_WIDTH, -r_diff, TFT_BLACK);
+    tft.fillRect(pd_pos, the_ball->p_right.y + PADDLE_HEIGHT, pd_width, -r_diff + CLEAR_EXTRA, TFT_BLACK);
   }
-  tft.fillRect(PADDLE_RPOS, the_ball->p_right.y, PADDLE_WIDTH, PADDLE_HEIGHT, TFT_WHITE);
+  tft.fillRect(pd_pos, the_ball->p_right.y, pd_width, PADDLE_HEIGHT, TFT_WHITE);
 
   the_ball->p_left.last_y = the_ball->p_left.y;
   the_ball->p_right.last_y = the_ball->p_right.y;
