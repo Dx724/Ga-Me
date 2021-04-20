@@ -212,8 +212,8 @@ void game_init() {
   msg_out.ball = {
     .x = (SCREEN_WIDTH * 3.0)/2.0,
     .y = (SCREEN_HEIGHT)/2.0,
-    .vel_x = 5,
-    .vel_y = 2,
+    .vel_x = random(3,9)*(random(0,2) == 0 ? -1 : 1),
+    .vel_y = random(2,6)*(random(0,2) == 0 ? -1 : 1),
     .p_left = {
       .y = (SCREEN_HEIGHT)/2.0,
       .last_y = (SCREEN_HEIGHT)/2.0,
