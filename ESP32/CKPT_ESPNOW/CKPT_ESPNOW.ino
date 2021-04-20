@@ -387,6 +387,9 @@ void game_loop() {
     tft.fillRect(PADDLE_RPOS, the_ball->p_right.y + PADDLE_HEIGHT, PADDLE_WIDTH, -r_diff, TFT_BLACK);
   }
   tft.fillRect(PADDLE_RPOS, the_ball->p_right.y, PADDLE_WIDTH, PADDLE_HEIGHT, TFT_WHITE);
+
+  the_ball->p_left.last_y = the_ball->p_left.y;
+  the_ball->p_right.last_y = the_ball->p_right.y;
 }
 
 void loop() {
