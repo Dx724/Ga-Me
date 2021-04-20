@@ -27,7 +27,7 @@
 #define FIELD_WIDTH (SCREEN_WIDTH * 3)
 
 // TODO: Define roles
-#define BOARD_ROLE 3
+#define BOARD_ROLE 1
 
 // OTHER_MAC_A will be directly to left if possible
 // OTHER_MAC_B will be directly to right if possible
@@ -101,8 +101,6 @@ const struct_msg *ord_msg[3] = {&msg_in_a, &msg_in_b, &msg_out};
 #endif
 
 TFT_eSPI tft = TFT_eSPI(135, 240);
-
-int activeScreen = 1;
 
 void data_send_callback(const uint8_t *mac, esp_now_send_status_t status) {
   if (status != ESP_NOW_SEND_SUCCESS) {
@@ -266,30 +264,6 @@ void update_input() {
   } 
 }
 
-/*
-void show_buttons() {
-  static uint64_t timeStamp = 0;
-  if (millis() - timeStamp > 1000) {
-    timeStamp = millis();
-    int b1 = !digitalRead(BUTTON_1); // Buttons are normally-closed push buttons, so invert
-    int b2 = !digitalRead(BUTTON_2);
-    tft.fillScreen(TFT_BLACK);
-    tft.setTextDatum(MC_DATUM);
-    tft.drawString("Buttons:" + String(b1) + " " + String(b2),  tft.width() / 2, tft.height() / 2 );
-    tft.drawString("Btn_A:" + String(msg_in_a.btn1) + " " + String(msg_in_a.btn2),  tft.width() / 2, tft.height() / 4 );
-    tft.drawString("Btn_B:" + String(msg_in_b.btn1) + " " + String(msg_in_b.btn2),  tft.width() / 2, 3 * tft.height() / 4 );
-
-    char should_send = (msg_out.btn1 ^ b1) | (msg_out.btn2 ^ b2);
-    msg_out.btn1 = b1;
-    msg_out.btn2 = b2;
-    if (should_send) {
-      msg_out.type = btn;
-      do_broadcast();
-    }    
-  }
-}
-*/
-
 #define GAME_TICK 10.0
 
 void transfer_control(int direction) {
@@ -338,6 +312,8 @@ void game_loop() {
   
   the_ball->x += the_ball->vel_x / GAME_TICK;
   the_ball->y += the_ball->vel_y / GAME_TICK;
+  the_ball->x += abs(the_ball->vel_x) / 2 * (ord_msg[1]->btn1 - ord_msg[1]->btn2) / GAME_TICK;   // Middle player ball updates
+  
   if (the_ball->y > SCREEN_HEIGHT - BALL_RADIUS) {
     the_ball->vel_y *= -1;
     the_ball->y = (SCREEN_HEIGHT - BALL_RADIUS) - (the_ball->y - (SCREEN_HEIGHT - BALL_RADIUS));
@@ -433,11 +409,13 @@ void over_loop() {
   tft.fillScreen(TFT_RED);
 }
 
+int idle_vel = 1;
+
 void idle_loop() {
   static int i = 0;
   static double r = 0.1;
   tft.drawPixel(SCREEN_WIDTH / 2 * (1+r*cos(i*PI/180.0)), SCREEN_HEIGHT / 2 * (1+r*sin(i*PI/180.0)), random(0xFFFF));
-  i++;
+  i += idle_vel;
   r *= 1.01;
   if (r > sqrt(2.1))
     r = 0.1;
@@ -452,10 +430,6 @@ void on_over() {
 }
 
 void loop() {
-//  if (activeScreen == 2) {
-//    showTouch();
-//  }
-  //button_loop();
   switch (this_state) {
     case idle:
       idle_loop();

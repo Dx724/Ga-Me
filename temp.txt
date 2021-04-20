@@ -7,3 +7,5 @@ difficulty of testing new code across all three devices
 	--> temporary code changes to allow components to be tested on single devices
 
 broken physical button
+
+only putting bugfixes on certain devices
