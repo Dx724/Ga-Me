@@ -4,6 +4,9 @@
 #include "common.h"
 #include <esp_now.h>
 
+// Define role (1, 2, or 3) before uploading
+#define BOARD_ROLE 3
+
 #ifndef TFT_DISPOFF
 #define TFT_DISPOFF 0x28
 #endif
@@ -25,9 +28,6 @@
 #define SCREEN_WIDTH 135
 #define SCREEN_HEIGHT 240
 #define FIELD_WIDTH (SCREEN_WIDTH * 3)
-
-// Define role (1, 2, or 3) before uploading
-#define BOARD_ROLE 1
 
 // OTHER_MAC_A will be directly to left if possible
 // OTHER_MAC_B will be directly to right if possible
@@ -153,13 +153,6 @@ void showTouch() { // TODO: Using touch?
   }
 }
 
-void wifi_init() { // TODO: Need to connect to network? May interfere with ESP NOW performance
-  WiFi.begin(WIFI_SSID, WIFI_PASS); // From secrets.h
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-  }
-}
-
 bool enow_init() {
   WiFi.mode(WIFI_STA);
   if (esp_now_init() != ESP_OK) {
@@ -228,17 +221,7 @@ void setup() {
   if (BOARD_ROLE == 2) {
     game_init();
     on_control();
-  }
-  //button_init();
-
-  /*
-  // TESTING CODE
-  game_init();
-  msg_out.ball.vel_x = -2;
-  msg_out.ball.x = 45;
-  on_control();
-  */
-  
+  }  
 }
 
 void do_send(const uint8_t *mac) {
@@ -335,10 +318,6 @@ void game_loop() {
       }
     }
     else {
-      /*
-      the_ball->vel_x *= -1;
-      the_ball->x = FIELD_WIDTH - (the_ball->x - FIELD_WIDTH);
-      */
       on_over();
     }
   }
@@ -359,10 +338,6 @@ void game_loop() {
       }
     }
     else {
-      /*
-      the_ball->vel_x *= -1;
-      the_ball->x = -the_ball->x;
-      */
       on_over();
     }
   }
