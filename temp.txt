@@ -27,3 +27,9 @@ no frame buffer --> reduce flickering with partial draws
 randomized conditions --> have to test dozens of cases
 
 longer games allow for longer drawings --> work hard to enjoy the free time
+
+middle players can help others to achieve their own goals
+
+ball has to be somewhere --> at least one player will be busy (somewhere the work has to get done?)
+
+testing a multiplayer game by myself
