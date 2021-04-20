@@ -120,8 +120,9 @@ bool mac_equals(const uint8_t *mac1, const uint8_t *mac2) {
 
 void on_control() {
   this_state = game;
-  tft.fillScreen(TFT_BLACK);
 }
+
+int just_transitioned = false;
 
 void data_recv_callback(const uint8_t *mac, const uint8_t *data_in, int len) {
   struct_msg *msg_dest = mac_equals(OTHER_MAC_A, mac) ? &msg_in_a : &msg_in_b;
@@ -131,6 +132,7 @@ void data_recv_callback(const uint8_t *mac, const uint8_t *data_in, int len) {
   Serial.println("B2: " + String(msg_dest->btn2));
   switch (msg_dest->type) {
     case ctrl:
+      just_transitioned = true;
       memcpy(&msg_out.ball, &msg_dest->ball, sizeof(msg_out.ball));
       on_control();
       break;
@@ -231,12 +233,13 @@ void setup() {
   }
   //button_init();
 
-  
+  /*
   // TESTING CODE
   game_init();
   msg_out.ball.vel_x = -2;
   msg_out.ball.x = 45;
   on_control();
+  */
   
 }
 
@@ -324,6 +327,11 @@ bool paddle_hits(struct paddle *p, struct ball *b) { // Don't account for ball r
 #define PADDLE_THIN 5
 
 void game_loop() {
+  if (just_transitioned) {
+    just_transitioned = false;
+    tft.fillScreen(TFT_BLACK);
+  }
+  
   // Ball updates  
   struct ball *the_ball = &msg_out.ball;
   struct ball prev_ball = translate_coords(the_ball);
