@@ -28,7 +28,7 @@
 #define FIELD_WIDTH (SCREEN_WIDTH * 3)
 
 // TODO: Define roles
-#define BOARD_ROLE 3
+#define BOARD_ROLE 1
 
 // OTHER_MAC_A will be directly to left if possible
 // OTHER_MAC_B will be directly to right if possible
@@ -256,13 +256,13 @@ void setup() {
   }
   //button_init();
 
-  /*
+  
   // TESTING CODE
   game_init();
-  msg_out.ball.vel_x = 0;
+  msg_out.ball.vel_x = -2;
   msg_out.ball.x = 45;
   on_control();
-  */
+  
 }
 
 void do_send(const uint8_t *mac) {
@@ -328,6 +328,7 @@ void transfer_control(int direction) {
       Serial.println(direction);
       break;
   }
+  tft.fillScreen(random(0xFFFF));
   this_state = idle;
 }
 
@@ -350,6 +351,8 @@ bool paddle_hits(struct paddle *p, struct ball *b) { // Don't account for ball r
 void game_loop() {
   // Ball updates  
   struct ball *the_ball = &msg_out.ball;
+  struct ball prev_ball = translate_coords(the_ball);
+  
   the_ball->x += the_ball->vel_x / GAME_TICK;
   the_ball->y += the_ball->vel_y / GAME_TICK;
   if (the_ball->y > SCREEN_HEIGHT - BALL_RADIUS) {
@@ -365,6 +368,7 @@ void game_loop() {
   if (local_ball.x > SCREEN_WIDTH) { // Transfer control at center, not boundary of ball
     if (BOARD_ROLE < 3) {
       transfer_control(1);
+      return;
     }
     else {
       /*
@@ -375,7 +379,7 @@ void game_loop() {
     }
   }
   else if (BOARD_ROLE == 3 && the_ball->y > SCREEN_WIDTH - PADDLE_WIDTH - BALL_RADIUS) {
-    if (paddle_hits(&the_ball->p_right, &the_ball)) {
+    if (paddle_hits(&the_ball->p_right, the_ball)) {
       the_ball->vel_x *= -1;
       the_ball->x = (FIELD_WIDTH - PADDLE_WIDTH - BALL_RADIUS) - (the_ball->x - (FIELD_WIDTH - PADDLE_WIDTH - BALL_RADIUS));
     }
@@ -383,6 +387,7 @@ void game_loop() {
   else if (local_ball.x < 0) {
     if (BOARD_ROLE > 1) {
       transfer_control(-1);
+      return;
     }
     else {
       /*
@@ -393,21 +398,22 @@ void game_loop() {
     }
   }
   else if (local_ball.x < PADDLE_WIDTH + BALL_RADIUS) {
-    if (paddle_hits(&the_ball->p_left, &the_ball)) {
+    if (paddle_hits(&the_ball->p_left, the_ball)) {
       the_ball->vel_x *= -1;
       the_ball->x = (PADDLE_WIDTH + BALL_RADIUS) - (the_ball->x - (PADDLE_WIDTH + BALL_RADIUS));
     }
   }
 
   // Paddle updates
-  the_ball->p_left.y += PADDLE_VEL * (ord_msg[0]->btn2 - ord_msg[0]->btn1) / GAME_TICK;
-  the_ball->p_right.y += PADDLE_VEL * (ord_msg[2]->btn2 - ord_msg[2]->btn1) / GAME_TICK;
+  the_ball->p_left.y += PADDLE_VEL * (ord_msg[0]->btn1 - ord_msg[0]->btn2) / GAME_TICK;
+  the_ball->p_right.y += PADDLE_VEL * (ord_msg[2]->btn1 - ord_msg[2]->btn2) / GAME_TICK;
 
   doublep_clamp(&the_ball->p_left.y, 0, SCREEN_HEIGHT - PADDLE_HEIGHT);
   doublep_clamp(&the_ball->p_right.y, 0, SCREEN_HEIGHT - PADDLE_HEIGHT);
 
   // Then draw
   //tft.fillScreen(TFT_BLACK);
+  tft.drawCircle(prev_ball.x, prev_ball.y, BALL_RADIUS, TFT_BLACK); // Just erase an outline to reduce flicker
   tft.fillCircle(local_ball.x, local_ball.y, BALL_RADIUS, TFT_WHITE);
 
   int pd_width = BOARD_ROLE == 1 ? PADDLE_WIDTH : PADDLE_THIN;
@@ -444,6 +450,16 @@ void over_loop() {
   tft.fillScreen(TFT_RED);
 }
 
+void idle_loop() {
+  static int i = 0;
+  static double r = 0.1;
+  tft.drawPixel(SCREEN_WIDTH / 2 * (1+r*cos(i*PI/180.0)), SCREEN_HEIGHT / 2 * (1+r*sin(i*PI/180.0)), random(0xFFFF));
+  i++;
+  r *= 1.01;
+  if (r > sqrt(2.1))
+    r = 0.1;
+}
+
 void on_over() {
   if (BOARD_ROLE == 2)
     Serial.println("ERROR: OVER ON CENTER");
@@ -459,7 +475,7 @@ void loop() {
   //button_loop();
   switch (this_state) {
     case idle:
-      // TODO: idle graphics
+      idle_loop();
       break;
     case game:
       game_loop();
