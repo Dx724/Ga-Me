@@ -48,7 +48,8 @@ const uint8_t OTHER_MAC_B[] = MAC2;
 
 enum c_state {
   idle,
-  game
+  game,
+  over
 };
 
 enum msg_type {
@@ -255,11 +256,13 @@ void setup() {
   }
   //button_init();
 
+  /*
   // TESTING CODE
   game_init();
   msg_out.ball.vel_x = 0;
   msg_out.ball.x = 45;
   on_control();
+  */
 }
 
 void do_send(const uint8_t *mac) {
@@ -335,32 +338,46 @@ void doublep_clamp(double *v, double low, double high) {
     *v = low;
 }
 
+bool paddle_hits(struct paddle *p, struct ball *b) { // Don't account for ball radius here to allow for ball to "clip through" the paddle corners
+  return p->y <= b->y && (p->y + PADDLE_HEIGHT) >= b->y;
+}
+
 #define BALL_RADIUS 5
 
 #define CLEAR_EXTRA 5
 #define PADDLE_THIN 5
 
 void game_loop() {
-  // Ball updates
+  // Ball updates  
   struct ball *the_ball = &msg_out.ball;
   the_ball->x += the_ball->vel_x / GAME_TICK;
   the_ball->y += the_ball->vel_y / GAME_TICK;
-  if (the_ball->y > SCREEN_HEIGHT) {
+  if (the_ball->y > SCREEN_HEIGHT - BALL_RADIUS) {
     the_ball->vel_y *= -1;
-    the_ball->y = SCREEN_HEIGHT - (the_ball->y - SCREEN_HEIGHT);
+    the_ball->y = (SCREEN_HEIGHT - BALL_RADIUS) - (the_ball->y - (SCREEN_HEIGHT - BALL_RADIUS));
   }
-  else if (the_ball->y < 0) {
+  else if (the_ball->y < BALL_RADIUS) {
     the_ball->vel_y *= -1;
-    the_ball->y = -the_ball->y;
+    the_ball->y = BALL_RADIUS - (the_ball->y - BALL_RADIUS);
   }
+
   struct ball local_ball = translate_coords(the_ball);
-  if (local_ball.x > SCREEN_WIDTH) {
+  if (local_ball.x > SCREEN_WIDTH) { // Transfer control at center, not boundary of ball
     if (BOARD_ROLE < 3) {
       transfer_control(1);
     }
     else {
+      /*
       the_ball->vel_x *= -1;
       the_ball->x = FIELD_WIDTH - (the_ball->x - FIELD_WIDTH);
+      */
+      on_over();
+    }
+  }
+  else if (BOARD_ROLE == 3 && the_ball->y > SCREEN_WIDTH - PADDLE_WIDTH - BALL_RADIUS) {
+    if (paddle_hits(&the_ball->p_right, &the_ball)) {
+      the_ball->vel_x *= -1;
+      the_ball->x = (FIELD_WIDTH - PADDLE_WIDTH - BALL_RADIUS) - (the_ball->x - (FIELD_WIDTH - PADDLE_WIDTH - BALL_RADIUS));
     }
   }
   else if (local_ball.x < 0) {
@@ -368,8 +385,17 @@ void game_loop() {
       transfer_control(-1);
     }
     else {
+      /*
       the_ball->vel_x *= -1;
       the_ball->x = -the_ball->x;
+      */
+      on_over();
+    }
+  }
+  else if (local_ball.x < PADDLE_WIDTH + BALL_RADIUS) {
+    if (paddle_hits(&the_ball->p_left, &the_ball)) {
+      the_ball->vel_x *= -1;
+      the_ball->x = (PADDLE_WIDTH + BALL_RADIUS) - (the_ball->x - (PADDLE_WIDTH + BALL_RADIUS));
     }
   }
 
@@ -414,6 +440,18 @@ void game_loop() {
   the_ball->p_right.last_y = the_ball->p_right.y;
 }
 
+void over_loop() {
+  tft.fillScreen(TFT_RED);
+}
+
+void on_over() {
+  if (BOARD_ROLE == 2)
+    Serial.println("ERROR: OVER ON CENTER");
+  game_init();
+  transfer_control(BOARD_ROLE == 1 ? 1 : -1);
+  this_state = over;
+}
+
 void loop() {
 //  if (activeScreen == 2) {
 //    showTouch();
@@ -425,6 +463,9 @@ void loop() {
       break;
     case game:
       game_loop();
+      break;
+    case over:
+      over_loop();
       break;
   }
   update_input();
