@@ -26,8 +26,8 @@
 #define SCREEN_HEIGHT 240
 #define FIELD_WIDTH (SCREEN_WIDTH * 3)
 
-// TODO: Define roles
-#define BOARD_ROLE 3
+// Define role (1, 2, or 3) before uploading
+#define BOARD_ROLE 1
 
 // OTHER_MAC_A will be directly to left if possible
 // OTHER_MAC_B will be directly to right if possible
@@ -371,8 +371,11 @@ void game_loop() {
   doublep_clamp(&the_ball->p_right.y, 0, SCREEN_HEIGHT - PADDLE_HEIGHT);
 
   // Then draw
-  //tft.fillScreen(TFT_BLACK);
-  tft.drawCircle(prev_ball.x, prev_ball.y, BALL_RADIUS, TFT_BLACK); // Just erase an outline to reduce flicker -- creates "speed trail" when moving quickly!
+  // tft.fillScreen(TFT_BLACK); Don't redraw the entire screen --> leads to flickering
+  // Just erase an outline to reduce flicker -- creates "speed trail" when moving quickly, so draw multiple if we want to avoid that!
+  tft.drawCircle(prev_ball.x, prev_ball.y, BALL_RADIUS+2, TFT_BLACK);
+  tft.drawCircle(prev_ball.x, prev_ball.y, BALL_RADIUS+1, TFT_BLACK);
+  tft.drawCircle(prev_ball.x, prev_ball.y, BALL_RADIUS, TFT_BLACK);
   tft.fillCircle(local_ball.x, local_ball.y, BALL_RADIUS, TFT_WHITE);
 
   int pd_width = BOARD_ROLE == 1 ? PADDLE_WIDTH : PADDLE_THIN;

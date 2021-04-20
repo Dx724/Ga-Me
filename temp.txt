@@ -19,3 +19,11 @@ reuse TFT for connection indication as with previous projects (since the first o
 preprocessor macros leading to recompilation
 
 symmetry in idle despite asymmetry in active state
+
+enclosures without making touch functionality obvious
+
+no frame buffer --> reduce flickering with partial draws
+
+randomized conditions --> have to test dozens of cases
+
+longer games allow for longer drawings --> work hard to enjoy the free time
