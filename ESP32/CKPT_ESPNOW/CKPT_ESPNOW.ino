@@ -268,6 +268,8 @@ void transfer_control(int direction) {
   }
 }
 
+#define BALL_RADIUS 3
+
 void game_loop() {
   struct ball *the_ball = &msg_out.ball;
   the_ball->x += the_ball->vel_x / GAME_TICK;
@@ -299,6 +301,10 @@ void game_loop() {
       the_ball->x = -the_ball->x;
     }
   }
+
+  // Then draw
+  tft.fillScreen(TFT_BLACK);
+  tft.fillRect(local_ball.x, local_ball.y, BALL_RADIUS, BALL_RADIUS, TFT_WHITE);
 }
 
 void loop() {
