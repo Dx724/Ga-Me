@@ -29,9 +29,9 @@ The left and right players each control three paddles -- one on each screen. The
 # Hardware Setup
 This project used three TTGO T-Display ESP32 boards with built-in TFT LCDs. Note that a USB C cable is recommended for programming these boards. A lithium polymer battery was used to power each board via the JST connector. The batteries were attached securely to the boards using Plasti-Tak. In the image above, the cables for this were positioned so as to look like lanyards, although they should not actually be used as such.
 
-![Image of single device from side](media/photo_single.jpgTODO)
+![Image of single device from side](media/photo_single.jpg)
 
-Feel free to add some decoration at the top of the device, although avoid materials which may interfere with the antenna present there. Avoid excessive covering of the device otherwise unless a fan is installed, as the microcontroller gets hot rather when running the code here. In addition, if a covering is use, care must be taken to ensure the artistic control interface is still available (see [Controlling the Art](#TODO) below).
+Feel free to add some decoration at the top of the device, although avoid materials which may interfere with the antenna present there. Avoid excessive covering of the device otherwise unless a fan is installed, as the microcontroller gets hot rather when running the code here. In addition, if a covering is use, care must be taken to ensure the artistic control interface is still available (see [Controlling the Art](#controlling-the-art) below).
 
 # Software Setup
 ## Software Dependencies
