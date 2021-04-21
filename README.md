@@ -62,12 +62,18 @@ The gameplay of the pong game can be adjusted by changing the following macros:
 # Controls
 ## Controlling Pong
 ### Players 1 (left) and 3 (right)
-- Left Button: move paddle down
-- Right Button: move paddle up
+|Input|Action|
+|---|---|
+|Left Button|move paddle down|
+|Right Button|move paddle up|
+<br/>
 ### Player 2 (center)
 Note that Player 2 cannot change the ball's direction completely (i.e., from moving left to moving right). However, he/she can speed up or slow down the ball's **horizontal** movement, changing the path of the ball. For example, pressing the left button while the ball is already moving leftwards will cause it to speed up horizontally, moving at a "flatter" angle.
-- Left Button: move ball towards left
-- Right Button: move ball towards right
+|Input|Action|
+|---|---|
+|Left Button|move ball towards left|
+|Right Button|move ball towards right|
+<br/>
 ## Controlling the Art
 ### All Players
 The generative art display will appear when the ball is not currently on the player's screen as long as they did not just lose the pong game (i.e., the ball moved past their final paddle).
