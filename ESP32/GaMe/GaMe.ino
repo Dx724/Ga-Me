@@ -1,11 +1,21 @@
 #include <TFT_eSPI.h>
 #include <WiFi.h>
-#include "secrets.h"
 #include "common.h"
 #include <esp_now.h>
 
 // Define role (1, 2, or 3) before uploading
 #define BOARD_ROLE 3
+
+// CONFIGURATION START
+#define PADDLE_HEIGHT 35
+#define PADDLE_VEL 7
+#define VEL_X_MIN 3
+#define VEL_X_MAX 9
+#define VEL_Y_MIN 2
+#define VEL_Y_MAX 6
+#define BALL_RADIUS 5
+#define GAME_TICK 10.0
+// CONFIGURATION END
 
 #ifndef TFT_DISPOFF
 #define TFT_DISPOFF 0x28
@@ -59,8 +69,6 @@ enum msg_type {
 c_state this_state = idle;
 
 #define PADDLE_WIDTH 12
-#define PADDLE_HEIGHT 35
-#define PADDLE_VEL 7
 
 struct paddle {
   double y;
@@ -181,8 +189,8 @@ void game_init() {
   msg_out.ball = {
     .x = (SCREEN_WIDTH * 3.0)/2.0,
     .y = (SCREEN_HEIGHT)/2.0,
-    .vel_x = random(3,9)*(random(0,2) == 0 ? -1 : 1),
-    .vel_y = random(2,6)*(random(0,2) == 0 ? -1 : 1),
+    .vel_x = random(VEL_X_MIN, VEL_X_MAX)*(random(0,2) == 0 ? -1 : 1),
+    .vel_y = random(VEL_Y_MIN, VEL_Y_MAX)*(random(0,2) == 0 ? -1 : 1),
     .p_left = {
       .y = (SCREEN_HEIGHT)/2.0,
       .last_y = (SCREEN_HEIGHT)/2.0,
@@ -247,8 +255,6 @@ void update_input() {
   } 
 }
 
-#define GAME_TICK 10.0
-
 void transfer_control(int direction) {
   msg_out.type = ctrl;
   switch (direction) {
@@ -277,8 +283,6 @@ void doublep_clamp(double *v, double low, double high) {
 bool paddle_hits(struct paddle *p, struct ball *b) { // Don't account for ball radius here to allow for ball to "clip through" the paddle corners
   return p->y <= b->y && (p->y + PADDLE_HEIGHT) >= b->y;
 }
-
-#define BALL_RADIUS 5
 
 #define CLEAR_EXTRA 5
 #define PADDLE_THIN 2
