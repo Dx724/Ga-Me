@@ -2,7 +2,7 @@
 ## A game of split worlds
 ![Image of the Ga-Me devices](media/photo_hands.jpg)
 
-[Video Demo]() <!-- TODO -->
+[Video Demo](https://youtu.be/Ai3KYMyOoVw)
 
 Eight hours of sleep, eight hours of school, and eight hours of free time. That's how the saying goes. In the fast-paced world we live in today, sometimes this split isn't so clear.
 
