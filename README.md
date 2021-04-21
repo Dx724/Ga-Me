@@ -13,16 +13,27 @@ On the surface, the main attraction of Ga-Me is that traditional pong game. This
 The left and right players each control three paddles -- one on each screen. The middle player can influence the movement of the ball, allowing them to aid or sabotage the other two players for his/her own benefit. But here's the catch: if the ball enters into your screen, your artwork is deleted. You'll have to start over next time. Thus, players must carefully balance both sets of controls to fend off the ball as they produce their works of art.
 
 # Table of Contents <!-- omit in toc -->
-<!-- TODO -->
+- [Hardware Setup](#hardware-setup)
+- [Software Setup](#software-setup)
+  - [Software Dependencies](#software-dependencies)
+  - [Preparation](#preparation)
+  - [Installation](#installation)
+  - [Configuration](#configuration)
+- [Controls](#controls)
+  - [Controlling Pong](#controlling-pong)
+    - [Players 1 and 3 (left/right)](#players-1-and-3-leftright)
+    - [Player 2 (center)](#player-2-center)
+  - [Controlling the Art](#controlling-the-art)
+    - [All Players](#all-players)
 
-# Setup
-## Hardware
+# Hardware Setup
 This project used three TTGO T-Display ESP32 boards with built-in TFT LCDs. Note that a USB C cable is recommended for programming these boards. A lithium polymer battery was used to power each board via the JST connector. The batteries were attached securely to the boards using Plasti-Tak. In the image above, the cables for this were positioned so as to look like lanyards, although they should not actually be used as such.
 
 ![Image of single device from side](media/photo_single.jpgTODO)
 
 Feel free to add some decoration at the top of the device, although avoid materials which may interfere with the antenna present there. Avoid excessive covering of the device otherwise unless a fan is installed, as the microcontroller gets hot rather when running the code here. In addition, if a covering is use, care must be taken to ensure the artistic control interface is still available (see [Controlling the Art](#TODO) below).
 
+# Software Setup
 ## Software Dependencies
 - Arduino 1.8.13 or similar
   - TFT_eSPI library for TTGO T-Display (see [here](https://github.com/Xinyuan-LilyGO/TTGO-T-Display))
@@ -61,7 +72,7 @@ The gameplay of the pong game can be adjusted by changing the following macros:
 
 # Controls
 ## Controlling Pong
-### Players 1 (left) and 3 (right)
+### Players 1 and 3 (left/right)
 |Input|Action|
 |---|---|
 |Left Button|move paddle down|
